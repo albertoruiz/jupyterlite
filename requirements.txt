@@ -6,8 +6,7 @@ ipympl>=0.8.2
 ipywidgets>=8.0.0,<9
 jupyterlab~=3.5.1
 jupyterlab-drawio
-jupyterlab-language-pack-fr-FR
-jupyterlab-language-pack-zh-CN
+jupyterlab-language-pack-es-ES
 jupyterlab-fasta>=3,<4
 jupyterlab-geojson>=3,<4
 jupyterlab-tour
