@@ -7,6 +7,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
 
 from numpy import cross, sin, cos, arctan2, pi, sqrt, arccos
 
@@ -61,13 +64,13 @@ def Rotation2EulerAngles(R):
         N = np.array([1,0,0])
     n = norm(N)
     
-    i = np.arccos(Z[2])
+    i = arccos(Z[2])
     
-    Ω = np.arccos(N[0]/n)
+    Ω = arccos(N[0]/n)
     if N[1] < 0:
         Ω = 2*π - Ω
     
-    ω = arccos( N @ X / n)
+    ω = arccos(np.clip( N @ X / n, -1,1) )
     if X[2] < 0:
         ω = 2*π - ω
     
@@ -203,6 +206,46 @@ def mkPathAbsTime(orbit, p_r, t_r):
         return path(t - t_r + t_nat)
     return state
 
+
+# Finalmente necesitamos la rotación general
+
+def rodrigues(v,a):
+    x,y,z = unit(v)
+    K = np.array([[ 0, -z,  y],
+                  [ z,  0, -x],
+                  [-y,  x,  0]])
+    R = np.eye(3) + np.sin(a)*K + (1-np.cos(a))*(K @ K)
+    return R
+
+def myrotation(v, a):
+    R = rodrigues(v,a)
+    return R
+
+
+
+def kepler2stv(a,e,om,OM,i,M,mu):
+    E = anomM2E(M,e)
+    nu = 2*np.arctan2(np.sqrt(1+e)*np.sin(E/2),np.sqrt(1-e)*np.cos(E/2))
+    r = a * (1-e*np.cos(E))
+    
+    x = r * np.array([np.cos(nu),np.sin(nu),0])
+    v = np.sqrt(mu *a) / r * np.array([-np.sin(E), np.sqrt(1-e**2)*np.cos(E), 0])
+    
+    R = myrotation((0,0,1),OM) @ myrotation((1,0,0),i) @ myrotation((0,0,1),om)
+    
+    return R @ x, R @ v
+
+
+def kepler2stvTrue(a,e,om,OM,i,nu,mu):
+    E = 2*np.arctan2(np.sqrt(1-e)*np.sin(nu/2),np.sqrt(1+e)*np.cos(nu/2))
+    r = a * (1-e*np.cos(E))
+    
+    x = r * np.array([np.cos(nu),np.sin(nu),0])
+    v = np.sqrt(mu *a) / r * np.array([-np.sin(E), np.sqrt(1-e**2)*np.cos(E), 0])
+    
+    R = myrotation((0,0,1),OM) @ myrotation((1,0,0),i) @ myrotation((0,0,1),om)
+    
+    return R @ x, R @ v
 
 #################################################################
 
@@ -627,20 +670,6 @@ def Gauss0(Rs,Ds,Ts, r2=None):
 
 # Con la proyección inversa sale clavado.
 
-# Finalmente necesitamos la rotación general
-
-def rodrigues(v,a):
-    x,y,z = unit(v)
-    K = np.array([[ 0, -z,  y],
-                  [ z,  0, -x],
-                  [-y,  x,  0]])
-    R = np.eye(3) + np.sin(a)*K + (1-np.cos(a))*(K @ K)
-    return R
-
-
-def myrotation(v, a):
-    R = rodrigues(v,a)
-    return R
 
 def GaussOrbit(P,T):
     p1,p2,p3 = P
@@ -755,9 +784,6 @@ def prettyAngle(ang):
 
 ################################################################
 
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 def fullOrbit(ax, orb, name):
     fun = mkPath(orb)
