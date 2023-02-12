@@ -90,6 +90,7 @@ def UTCSearch(s0, N, timeout, monitor=None):
     root = Node(s0,None)
     fin = False
     t0 = time.time()
+    t1 = t0
     for k in range(N):
         v = TreePolicy(root)
         D = DefaultPolicy(v.state)
@@ -101,13 +102,15 @@ def UTCSearch(s0, N, timeout, monitor=None):
         else:
             D == 0.5
 
+        curr_time = time.time()
         BackupNegamax(v,D)
 
-        if k%100==0 and monitor is not None:
+        if monitor is not None and (curr_time-t1) > 0.5:
             probs = sorted([(x.state.moves[-1], x.N, x.Q) for x in root.children])
             monitor(probs)
+            t1 = curr_time
 
-        if fin or (time.time()-t0)>timeout: break
+        if fin or (curr_time-t0)>timeout: break
     
     print(TT, k, time.time()-t0)
     probs = sorted([(x.state.moves[-1], x.N, x.Q) for x in root.children])
