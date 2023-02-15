@@ -51,6 +51,7 @@ class othello:
     
     
     def __init__(self,n,init=True):
+        self.name = 'othello'
         self.n = n
         self.resigned = False
         self.terminal = False
@@ -144,6 +145,3 @@ class othello:
         ax.hlines(np.arange(0,c+1)-0.5,-0.5,c-0.5,color='gray',lw=1)
         ax.vlines(np.arange(0,c+1)-0.5,-0.5,c-0.5,color='gray',lw=1)
         ax.text(-1.5,h-1,f'{self.board.sum()}')
-
-
-g = othello(8)

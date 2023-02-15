@@ -18,6 +18,7 @@ def mkWinKers(w):
 
 class connect:
     def __init__(self,n,h,w,init=True):
+        self.name = 'connect'
         self.n = n
         self.h = h
         self.w = w
