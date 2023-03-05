@@ -1,0 +1,111 @@
+import matplotlib.pyplot as plt
+from itertools import count
+from IPython.display import HTML
+import ipywidgets as widgets
+import asyncio
+
+plt.rc('animation', html='html5')
+
+ANIM = False
+MKVIDEO = False
+SAVEVIDEO = False
+PREVIEW = False
+
+save_path = "."
+load_path = save_path
+
+previous_interactive = True
+
+def figure(w=None,h=None, interactive=False):
+    global previous_interactive
+    if not previous_interactive:
+        pass #plt.close()
+    if w is None:
+        fig = plt.figure()
+    else:
+        fig = plt.figure(figsize=(w,h))
+    plt.tight_layout(h_pad=0,w_pad=0)
+    fig.canvas.toolbar_visible = False
+    fig.canvas.header_visible = False
+    fig.canvas.footer_visible = False
+    fig.canvas.capture_scroll = False
+    previous_interactive = interactive
+    return fig
+
+
+class animator():
+    """Dada una imagen y un actualizador, generamos botones para activar y desactivar la animación"""
+    """Si definimos la figura y todo lo que necesita dentro de una función se pueden mantener varias"""
+    """independientes en el notbook"""
+    def __init__(self, fig, fotogram):
+        self.STOP = True
+        self.k0 = 0
+        fig.canvas.toolbar_visible = False
+        fig.canvas.header_visible = False
+        fig.canvas.footer_visible = False
+        fig.canvas.capture_scroll = False
+
+        async def main_loop():
+            for k in count(self.k0):
+                if self.STOP: break
+                fotogram(k)
+                fig.canvas.draw()
+                await asyncio.sleep(0.001)
+            self.k0 = k
+
+        def play_clicked(b):
+            if self.STOP:
+                self.STOP = False
+                loop = asyncio.get_event_loop()
+                loop.create_task(main_loop())
+            else:
+                self.STOP = True
+
+        play_button = widgets.Button(description="Play / Stop")
+        play_button.on_click(play_clicked)
+
+        def reset_clicked(b):
+            self.k0 = 0
+            fotogram(0)
+            fig.canvas.draw()
+
+        reset_button = widgets.Button(description="Reset")
+        reset_button.on_click(reset_clicked)
+
+        display(widgets.HBox((play_button, reset_button)))
+        
+
+plt.rc('animation', html='html5')
+
+
+
+def metaAnimation(fig, fotogram, nframes, video=True, sleep=1/50):
+    if video:
+        def create(frames,interval):
+            from matplotlib import animation
+            return animation.FuncAnimation(fig, fotogram, frames=frames, interval=interval, blit=True, repeat=False)
+        return create
+    else:
+        animator(fig,fotogram)
+
+
+def metadisplay(name, maker, args, aframes = 100, vframes=150, interval=1000/25):
+    if ANIM:
+        #%matplotlib widget
+        maker(**args, nframes=aframes, init=0, video=False)
+
+    tag = f"<video src='{load_path}/{name}.mp4' controls>video</video>"
+    if MKVIDEO:
+        #%matplotlib inline
+        create = maker(**args, video=True)
+        anim = create(frames=vframes, interval=interval)
+
+        if SAVEVIDEO:
+            anim.save(f'{save_path}/{name}.mp4')
+            return HTML(tag)
+        else:
+            return HTML(anim.to_jshtml())
+
+    if not ANIM and not MKVIDEO and PREVIEW:
+        return HTML(tag)
+    
