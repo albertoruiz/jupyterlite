@@ -75,8 +75,12 @@ def val(u,v):
 
 def totup(x): return tuple([ tuple(z) for z in x])
 
+def bracket(f,g,can):
+    (Q,P) = can
+    return sum([diff(f,q)*diff(g,p) - diff(f,p)*diff(g,q) for q,p in zip(Q,P)])
+
 class Dynamics:
-    def __init__(self, T, V, Gen, Q, sus, cons=[], F=sympify(0), onlyEcs=False, H=False):
+    def __init__(self, T, V, Gen, Q, sus, cons=[], F=sympify(0), onlyEcs=False, alsoH=False):
     
         self.Q = Q
     
@@ -119,20 +123,36 @@ class Dynamics:
 
         mf = lambdify(Q+Vel+[t],(totup(m),tuple(f)),'math')
 
-        def dot(args,t):
+        def dotL(args,t):
             m,f = mf(*args,t)
             return np.hstack([args[-len(args)//2:] , la.solve(m,f)[:len(args)//2]])
 
-        self.dot = dot
+        self.dotL = dotL
 
         self.nconst = lambdify(Q,self.const,'math')
 
         self.coords = lambdify([t]+Q, [Gen[x].subs(sus) for x in Gen.keys()],'math')
+        
+        if not alsoH:
+            return
+        
+        self.P = P = dynsyms(symbols(f'p_1:{1+len(Q)}'))
+        self.Pec = Pec = [Eq(p,diff(L,dq).simplify()) for p,dq in zip(P,D)]
+        self.H0 = H0 = sum([p.rhs*d for p,d in zip(Pec,D)]) - L
+        self.cansus = solve(Pec,D)
+        self.H = H = H0.subs(self.cansus).simplify()
+        self.ecsH = [Eq(diff(z,t),bracket(z,H,(Q,P))) for z in Q+P]
+
+        num = lambdify(Q+P+[t],[e.rhs for e in self.ecsH],'math')
+        def dotH(args,t):
+            return num(*args,t)
+        self.dotH = dotH
 
 
-def nsolve(sys, T, dt, q0):
+
+def nsolve(dot, T, dt, q0):
     t = np.linspace(0,T,round(T/dt))
-    r = odeint(sys.dot,q0,t)
+    r = odeint(dot,q0,t)
     return np.hstack([ t.reshape(-1,1), r])
 
 def mkAnim(sol,sys,prepareFunc,fps,frames):
@@ -142,14 +162,14 @@ def mkAnim(sol,sys,prepareFunc,fps,frames):
         return ()
     return animation.FuncAnimation(fig, animate, frames=frames, interval=1000/fps, blit=True)
 
-def graph(solution,system):
+def graph(solution,system, moments=False):
     plt.figure(figsize=(6,3))
     t,*xs = solution.T
 
     n = len(xs)//2
     for x,v in zip(xs,system.Q):
         plt.plot(t,x,label=f'${vlatex(v)}$')
-    for x,v in zip(xs[n:],system.D):
+    for x,v in zip(xs[n:], system.P if moments else system.D):
         plt.plot(t,x,label=f'${vlatex(v)}$')
     plt.grid()
     plt.legend()
