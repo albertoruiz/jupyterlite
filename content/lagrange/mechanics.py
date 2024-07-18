@@ -1,5 +1,5 @@
 from sympy import *
-init_printing(pretty_print=True)
+init_printing(pretty_print=True, use_latex='mathjax')
 
 from sympy.physics.mechanics import dynamicsymbols, init_vprinting, vlatex
 init_vprinting(pretty_print=True)
