@@ -25,7 +25,10 @@ def disp(expr,name=None):
     if type(expr) == list:
         expr = Matrix(expr)
     return Eq(Symbol(name), UnevaluatedExpr(expr))
-        
+
+def disp3(a,b,c):
+    return Eq(a, Eq(b, c))
+
 def data3d(line, x,y,z):
     line.set_data(x,y)
     line.set_3d_properties(z)

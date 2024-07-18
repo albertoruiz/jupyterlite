@@ -1,9 +1,8 @@
-# JupyterLite notebooks
+# Notes to myself
 
-[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://albertoruiz.github.io/jupyterlite)
+[![Jupyter Book Badge](https://jupyterbook.org/badge.svg)](https://aruiz.org/notes)
 
-Run Jupyter notebooks directly in your browser.
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://aruiz.org/notes/lite)
 
-➡️ **https://albertoruiz.github.io/jupyterlite**
+[Alberto Ruiz García](http://aruiz.org)
 
-Generated from [jupyterlite/demo](https://github.com/jupyterlite/demo).
